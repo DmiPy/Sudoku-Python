@@ -2,37 +2,6 @@ import random
 from random import randint
 
 
-def is_row_valid(row):
-    unique_numbers = set()
-
-    for num in row:
-        if num != 0:
-
-            if num in unique_numbers:
-                return False
-            unique_numbers.add(num)
-
-
-    return len(unique_numbers) == 9 - row.count(0)
-
-
-def are_columns_valid(board):
-    not_unique_columns = []
-    for col in range(0,8):
-        column = [board[row][col] for row in range(9)]
-        unique_numbers = set()
-        
-        for num in column:
-                if num != 0:
-                    if num in unique_numbers:
-                        not_unique_columns.append(col)
-                    unique_numbers.add(num)
-
-    if not not_unique_columns:
-        return True
-    else: 
-        return not_unique_columns
-
 def print_sudoku(board):
     for i in range(9):
         if i % 3 == 0 and i != 0:
@@ -44,35 +13,69 @@ def print_sudoku(board):
         print()
 
 
-game_mode = "easy"
+def create_sudoku_board():
+    sudoku_board = [[0 for _ in range(9)] for _ in range(9)]
+    return sudoku_board
 
-if game_mode == "easy":
-    min, max = 3, 7
-elif game_mode == "normal":
-    min, max = 3, 6
-else:
-    min, max = 2, 5
 
-sudoku_board = [[0 for _ in range(9)] for _ in range(9)]
+sudoku_board = create_sudoku_board()
 
-for row in sudoku_board:
-    ints_in_row = randint(min, max)
-    available_numbers = list(range(1, 10))
-    random.shuffle(available_numbers)
 
-    for i in range(ints_in_row):
-        cell_index = randint(0, 8)
-        if row[cell_index] == 0:
-            row[cell_index] = available_numbers.pop()
+def get_random_num(sudoku_board, row, col):
+    candidates = list(range(1, 10))
 
-for row in sudoku_board:
-    print(is_row_valid(row))
+    i = 0
+    while i < (len(sudoku_board[row])):
+        if sudoku_board[row][i] in candidates:
+            candidates.remove(sudoku_board[row][i])
+        i += 1
 
-def fix_columns(board):
-    columns_to_fix = are_columns_valid(sudoku_board)
-    for col in columns_to_fix:
-        column = [board[row][col] for row in range(9)]
-        print(column)
+    column = [sudoku_board[row][col] for row in range(9)]
+    candidates = [x for x in candidates if x not in column]
 
-fix_columns(sudoku_board)
-print_sudoku(sudoku_board)
+    start_row = (row // 3) * 3
+    start_col = (col // 3) * 3
+
+    for _i in range(0, 3):
+        for _j in range(0, 3):
+            if sudoku_board[start_row + _i][start_col + _j] in candidates:
+                candidates.remove(sudoku_board[start_row + _i][start_col + _j])
+
+    if len(candidates) == 0:
+        return None
+    else:
+        return random.choice(candidates)
+
+
+def sudoku_generate_backtracking(sudoku_board, num_cells_to_fill):
+    all_indices = [(row, col) for row in range(9) for col in range(9)]
+    all_pairs = random.sample(all_indices, num_cells_to_fill)
+
+    for row, col in all_pairs:
+        original_value = sudoku_board[row][col]
+        random_int = get_random_num(sudoku_board, row, col)
+
+        while random_int == None:
+            sudoku_board[row][col] = original_value
+            row, col = all_pairs.pop()
+            random_int = get_random_num(sudoku_board, row, col)
+
+        sudoku_board[row][col] = random_int
+
+def set_difficulty(dif):
+    cells_to_fill = 0
+    if dif == "easy":
+        cells_to_fill = randint(32,36)
+    elif dif == "normal":
+        cells_to_fill = randint(26,31)
+    elif dif == "hard":
+        cells_to_fill = randint(22,25)
+    return cells_to_fill
+
+if __name__ == "__main__":
+    
+    cells_to_fill = set_difficulty("easy")
+
+    sudoku_generate_backtracking(sudoku_board, cells_to_fill)
+
+    print(print_sudoku(sudoku_board))
